@@ -46,29 +46,34 @@ def get_ai_response(prompt: str) -> str:
     if not gemini_key or gemini_key.strip() == "" or gemini_key == "your_gemini_api_key_here":
         return "⚠️ 尚未在 .env 中填寫 GEMINI_API_KEY！\n請前往 https://aistudio.google.com/app/apikey 免費申請金鑰。"
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-    try:
-        client = genai.Client(api_key=gemini_key)
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction="你是一個友善、聰明且樂於助人的 LINE 繁體中文 AI 智慧助理。請用繁體中文（台灣習慣用語）親切且簡明扼要地回覆使用者的問題。"
-            )
-        )
-        return response.text.strip() if response.text else "抱歉，我目前無法理解這則訊息。"
-    except Exception as e:
-        app.logger.warning(f"嘗試使用 {model_name} 失敗: {e}，切換備用模型 gemini-2.0-flash...")
+    # 候選模型備援清單（優先使用超高速的 flash-lite，並自動容錯降級）
+    candidate_models = [
+        os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest"),
+        "gemini-3.5-flash",
+        "gemini-3.8-flash"
+    ]
+    models_to_try = list(dict.fromkeys(candidate_models))
+
+    client = genai.Client(api_key=gemini_key)
+    last_error = None
+
+    for model_name in models_to_try:
         try:
-            client = genai.Client(api_key=gemini_key)
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction="你是一個友善、聰明且樂於助人的 LINE 繁體中文 AI 智慧助理。請用繁體中文（台灣習慣用語）親切且條理分明地回覆使用者的問題。"
+                )
             )
-            return response.text.strip() if response.text else "抱歉，我目前無法理解這則訊息。"
-        except Exception as e2:
-            app.logger.error(f"Gemini API 呼叫均失敗: {e2}")
-            return f"AI 處理時發生問題：{e2}"
+            if response.text and response.text.strip():
+                return response.text.strip()
+        except Exception as e:
+            app.logger.warning(f"模型 {model_name} 暫時無法使用 ({e})，正在嘗試下一個備援模型...")
+            last_error = e
+
+    app.logger.error(f"所有 Gemini 模型呼叫均失敗: {last_error}")
+    return f"AI 服務暫時忙碌中，請稍後再試（{last_error}）"
 
 @app.route("/", methods=['GET'])
 def home():
