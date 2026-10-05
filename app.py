@@ -55,6 +55,18 @@ def get_ai_response(prompt: str) -> str:
     ]
     models_to_try = list(dict.fromkeys(candidate_models))
 
+    # 快捷指令：使用者輸入 /model 或問正在使用的模型
+    clean_prompt = prompt.strip().lower()
+    if clean_prompt in ["/model", "model", "模型", "目前模型", "目前使用的模型", "你是什麼模型"]:
+        current_cfg = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+        return (
+            f"🤖 【目前 AI 模型資訊】\n"
+            f"• 預設模型：{current_cfg}\n"
+            f"• 備援模型庫：{', '.join(models_to_try)}\n"
+            f"• 底層版本：Gemini 3.5 Flash Lite / Flash 系列\n"
+            f"• 支援即時自動備援切換"
+        )
+
     client = genai.Client(api_key=gemini_key)
     last_error = None
 
@@ -75,6 +87,8 @@ def get_ai_response(prompt: str) -> str:
                 )
             )
             if response.text and response.text.strip():
+                actual_version = getattr(response, 'model_version', model_name)
+                print(f"[AI 模型呼叫成功] 模型名稱: {model_name}, 實際版本: {actual_version}")
                 return response.text.strip()
         except Exception as e:
             app.logger.warning(f"模型 {model_name} 暫時無法使用 ({e})，正在嘗試下一個備援模型...")
