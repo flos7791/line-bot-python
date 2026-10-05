@@ -72,6 +72,18 @@ def get_ai_response(prompt: str) -> str:
 
     today_str = datetime.now().strftime('%Y年%m月%d日')
 
+    # 讀取本地專屬知識庫 (若存在)
+    kb_content = ""
+    kb_path = os.path.join(os.path.dirname(__file__), "knowledge_base.txt")
+    if os.path.exists(kb_path):
+        try:
+            with open(kb_path, "r", encoding="utf-8") as f:
+                kb_content = f.read().strip()
+        except Exception as e:
+            app.logger.warning(f"讀取 knowledge_base.txt 失敗: {e}")
+
+    kb_instruction = f"\n【精確事實知識庫（請優先以此內容為準，具最高優先級）】：\n{kb_content}\n" if kb_content else ""
+
     for model_name in models_to_try:
         try:
             response = client.models.generate_content(
@@ -80,10 +92,11 @@ def get_ai_response(prompt: str) -> str:
                 config=types.GenerateContentConfig(
                     system_instruction=(
                         f"你是一個友善、聰明且樂於助人的 LINE 繁體中文 AI 智慧助理。今天的日期是 {today_str}。\n"
+                        f"{kb_instruction}\n"
                         "【核心守則】：\n"
                         "1. 嚴格防範幻覺（No Hallucination）：面對特定個人（如特定學校的某位老師/教授、公司主管）、生僻專有名詞或歷史細節，如果你的資料庫沒有百分之百確切把握，絕不可自行拼湊、嫁接同名人物或虛構其職稱、系所與經歷！\n"
-                        "2. 誠實求真：如果無法確定該人物是否屬於該學校/單位，請誠實說明「資料庫缺乏確切記載」，並引導使用者提供更多線索（例如所屬系所或研究領域），或給出官方查詢管道。\n"
-                        "3. 若知道有同名但不同單位的知名學者（例如陽明大學的同名教授），應清楚區分，避免張冠李戴。\n"
+                        "2. 優先參照知識庫：若使用者詢問上述知識庫中已記載的人事物，請務必按照知識庫提供準確資訊。\n"
+                        "3. 誠實求真：如果無法確定該人物是否屬於該學校/單位，請誠實說明「資料庫缺乏確切記載」，並引導使用者提供更多線索（例如所屬系所或研究領域），或給出官方查詢管道。\n"
                         "4. 即時資訊：若使用者詢問強烈依賴當天即時資訊的事物（如今日院線電影、今日天氣、股市現價），誠實說明並給出查詢建議。"
                     )
                 )
