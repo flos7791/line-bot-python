@@ -1,6 +1,6 @@
 # Python LINE Bot 專案
 
-這是一個使用 Python (Flask + `line-bot-sdk` v3) 打造的基礎 LINE 訊息回覆機器人（Echo Bot）。
+這是一個使用 Python (Flask + `line-bot-sdk` v3 + Google Gemini AI) 打造的智慧 LINE 聊天助理。
 
 ---
 
@@ -11,7 +11,7 @@ hello-python/
 ├── .env                  # 本機機密設定檔（請勿上傳至 GitHub）
 ├── .env.example          # 環境變數範本檔
 ├── .gitignore            # Git 忽略設定
-├── app.py                # 主程式（Webhook 與訊息處理邏輯）
+├── app.py                # 主程式（Webhook 與 Gemini AI 處理邏輯）
 ├── requirements.txt      # Python 相依套件
 └── README.md             # 本說明文件
 ```
@@ -29,17 +29,20 @@ pip install -r requirements.txt
 ```
 
 ### 2. 設定環境變數
-複製 `.env.example` 為 `.env`，並填入你的 LINE 金鑰：
+複製 `.env.example` 為 `.env`，並填入你的 LINE 與 Gemini 金鑰：
 ```env
 LINE_CHANNEL_SECRET=你的_Channel_Secret
 LINE_CHANNEL_ACCESS_TOKEN=你的_Channel_Access_Token
+GEMINI_API_KEY=你的_Gemini_API_Key
 ```
+*(可至 [Google AI Studio](https://aistudio.google.com/app/apikey) 免費取得 API 金鑰)*
 
 ### 3. 啟動伺服器
 ```bash
 python app.py
 ```
 伺服器將在 `http://127.0.0.1:5000` 運行。
+
 
 ### 4. 透過 ngrok 映射 Webhook
 ```bash
