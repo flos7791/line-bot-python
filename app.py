@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 # 確保在 Windows 控制台輸出中文不發生編碼錯誤
 if sys.platform == "win32":
@@ -57,13 +58,20 @@ def get_ai_response(prompt: str) -> str:
     client = genai.Client(api_key=gemini_key)
     last_error = None
 
+    today_str = datetime.now().strftime('%Y年%m月%d日')
+
     for model_name in models_to_try:
         try:
             response = client.models.generate_content(
                 model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    system_instruction="你是一個友善、聰明且樂於助人的 LINE 繁體中文 AI 智慧助理。請用繁體中文（台灣習慣用語）親切且條理分明地回覆使用者的問題。"
+                    system_instruction=(
+                        f"你是一個友善、聰明且樂於助人的 LINE 繁體中文 AI 智慧助理。今天的日期是 {today_str}。"
+                        "請用繁體中文（台灣習慣用語）親切且條理分明地回覆使用者的問題。"
+                        "若使用者詢問強烈依賴當天即時資訊的事物（如今日即時上映院線電影、今天即時天氣、今日股市最新價格），"
+                        "請誠實說明你的基礎知識庫範圍，並提供實用的查詢建議或相關管道。"
+                    )
                 )
             )
             if response.text and response.text.strip():
