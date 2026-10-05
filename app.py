@@ -46,7 +46,7 @@ def get_ai_response(prompt: str) -> str:
     if not gemini_key or gemini_key.strip() == "" or gemini_key == "your_gemini_api_key_here":
         return "⚠️ 尚未在 .env 中填寫 GEMINI_API_KEY！\n請前往 https://aistudio.google.com/app/apikey 免費申請金鑰。"
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     try:
         client = genai.Client(api_key=gemini_key)
         response = client.models.generate_content(
